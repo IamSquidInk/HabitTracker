@@ -20,18 +20,35 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
 
     if (showEntryScreen) {
         var selectedCategory by remember { mutableStateOf<Category?>(null) }
-        val productivityCategories = categories.values.filter { it.ledgerType == LedgerType.PRODUCTIVITY }
 
-        ProductivityEntryScreen(
-            categories = productivityCategories,
-            selectedCategory = selectedCategory,
-            onCategorySelected = { selectedCategory = it },
-            onSave = { categoryId, hours, minutes, note ->
-                viewModel.addProductivityEntry(categoryId, hours, minutes, note)
-                viewModel.closeEntryScreen()
-            },
-            onBack = { viewModel.closeEntryScreen() }
-        )
+        when (selectedLedger) {
+            SelectedLedger.PRODUCTIVITY -> {
+                val productivityCategories = categories.values.filter { it.ledgerType == LedgerType.PRODUCTIVITY }
+                ProductivityEntryScreen(
+                    categories = productivityCategories,
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = { selectedCategory = it },
+                    onSave = { categoryId, hours, minutes, note ->
+                        viewModel.addProductivityEntry(categoryId, hours, minutes, note)
+                        viewModel.closeEntryScreen()
+                    },
+                    onBack = { viewModel.closeEntryScreen() }
+                )
+            }
+            SelectedLedger.FOOD -> {
+                val foodCategories = categories.values.filter { it.ledgerType == LedgerType.FOOD }
+                FoodEntryScreen(
+                    categories = foodCategories,
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = { selectedCategory = it },
+                    onSave = { categoryId, name, note ->
+                        viewModel.addFoodEntry(categoryId, name, note)
+                        viewModel.closeEntryScreen()
+                    },
+                    onBack = { viewModel.closeEntryScreen() }
+                )
+            }
+        }
         return
     }
 

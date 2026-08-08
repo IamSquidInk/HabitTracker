@@ -50,6 +50,24 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun addFoodEntry(categoryId: Long, name: String, note: String? = null) {
+        viewModelScope.launch {
+            val sdfDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            val sdfTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+            val now = sdfDate.format(java.util.Date())
+            val time = sdfTime.format(java.util.Date())
+            db.foodEntryDao().insert(
+                FoodEntry(
+                    categoryId = categoryId,
+                    name = name,
+                    date = now,
+                    time = time,
+                    note = note
+                )
+            )
+        }
+    }
+
     private val _showEntryScreen = MutableStateFlow(false)
     val showEntryScreen: StateFlow<Boolean> = _showEntryScreen
 
