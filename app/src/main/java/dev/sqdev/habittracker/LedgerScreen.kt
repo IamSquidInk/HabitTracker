@@ -9,6 +9,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 
 @Composable
 fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
@@ -17,6 +19,8 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
     val foodEntries by viewModel.foodEntries.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val showEntryScreen by viewModel.showEntryScreen.collectAsState()
+
+
 
     if (showEntryScreen) {
         var selectedCategory by remember { mutableStateOf<Category?>(null) }
@@ -56,6 +60,12 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
 
         Column(modifier = Modifier.fillMaxSize()) {
 
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                IconButton(onClick = { viewModel.openSettingsScreen() }) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                }
+            }
+
             // Ledger switcher
             Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 SelectedLedger.entries.forEach { ledger ->
@@ -68,6 +78,9 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                     }
                 }
             }
+
+            // Summary card — new
+            SummaryCard(ledger = selectedLedger, viewModel = viewModel)
 
             when (selectedLedger) {
                 SelectedLedger.PRODUCTIVITY -> {
@@ -112,6 +125,28 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
         ) {
             Text("+")
+        }
+    }
+}
+
+@Composable
+fun SummaryCard(ledger: SelectedLedger, viewModel: LedgerViewModel) {
+    val monthLabel = remember {
+        java.text.SimpleDateFormat("MMM", java.util.Locale.getDefault()).format(java.util.Date()).uppercase()
+    }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        when (ledger) {
+            SelectedLedger.PRODUCTIVITY -> {
+                val (hrs, mins) = viewModel.currentMonthProductivityStats.collectAsState().value
+                Text("$monthLabel - PRODUCTIVITY", style = MaterialTheme.typography.labelMedium)
+                Text("$hrs HRS   $mins MIN", style = MaterialTheme.typography.headlineSmall)
+            }
+            SelectedLedger.FOOD -> {
+                val count = viewModel.currentMonthFoodCount.collectAsState().value
+                Text("$monthLabel - MEALS", style = MaterialTheme.typography.labelMedium)
+                Text("TOTAL MEAL LOGGED | $count", style = MaterialTheme.typography.headlineSmall)
+            }
         }
     }
 }

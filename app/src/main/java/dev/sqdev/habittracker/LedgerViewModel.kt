@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
 
 enum class SelectedLedger { PRODUCTIVITY, FOOD }
 
@@ -68,9 +69,33 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    val currentMonthProductivityStats: StateFlow<Pair<Int, Int>> = productivityEntries
+        .map { entries ->
+            val currentMonth = java.text.SimpleDateFormat("yyyy-MM", java.util.Locale.getDefault())
+                .format(java.util.Date())
+            val thisMonthEntries = entries.filter { it.date.startsWith(currentMonth) }
+            val totalMinutes = thisMonthEntries.sumOf { it.hours * 60 + it.minutes }
+            Pair(totalMinutes / 60, totalMinutes % 60)
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, Pair(0, 0))
+
+    val currentMonthFoodCount: StateFlow<Int> = foodEntries
+        .map { entries ->
+            val currentMonth = java.text.SimpleDateFormat("yyyy-MM", java.util.Locale.getDefault())
+                .format(java.util.Date())
+            entries.count { it.date.startsWith(currentMonth) }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, 0)
+
     private val _showEntryScreen = MutableStateFlow(false)
     val showEntryScreen: StateFlow<Boolean> = _showEntryScreen
 
     fun openEntryScreen() { _showEntryScreen.value = true }
     fun closeEntryScreen() { _showEntryScreen.value = false }
+
+    private val _showSettingsScreen = MutableStateFlow(false)
+    val showSettingsScreen: StateFlow<Boolean> = _showSettingsScreen
+
+    fun openSettingsScreen() { _showSettingsScreen.value = true }
+    fun closeSettingsScreen() { _showSettingsScreen.value = false }
 }
