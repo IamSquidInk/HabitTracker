@@ -19,8 +19,35 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
     val foodEntries by viewModel.foodEntries.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val showEntryScreen by viewModel.showEntryScreen.collectAsState()
+    val showSettingsScreen by viewModel.showSettingsScreen.collectAsState()
+    val showCategoryManagement by viewModel.showCategoryManagement.collectAsState()
+    val pendingDeleteCategory by viewModel.pendingDeleteCategory.collectAsState()
+    val pendingDeleteCount by viewModel.pendingDeleteCount.collectAsState()
 
-
+    // MOVED: dialog now sits here, before any return statements
+    pendingDeleteCategory?.let { category ->
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelDeleteCategory() },
+            title = { Text("Delete \"${category.name}\"?") },
+            text = {
+                if (pendingDeleteCount > 0) {
+                    Text("This category has $pendingDeleteCount entries. They'll be kept, but the category will be hidden.")
+                } else {
+                    Text("This category has no entries and will be permanently removed.")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmDeleteCategory() }) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelDeleteCategory() }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     if (showEntryScreen) {
         var selectedCategory by remember { mutableStateOf<Category?>(null) }
@@ -56,6 +83,23 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
         return
     }
 
+    if (showSettingsScreen) {
+        if (showCategoryManagement) {
+            CategorySettingsScreen(
+                categories = categories.values.toList(),
+                onDeleteCategory = { category -> viewModel.requestDeleteCategory(category) },
+                onAddCategory = { name, ledgerType -> viewModel.addCategory(name, "📌", ledgerType) },
+                onBack = { viewModel.closeCategoryManagement() }
+            )
+        } else {
+            SettingsScreen(
+                onManageCategories = { viewModel.openCategoryManagement() },
+                onBack = { viewModel.closeSettingsScreen() }
+            )
+        }
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
 
         Column(modifier = Modifier.fillMaxSize()) {
@@ -79,7 +123,7 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                 }
             }
 
-            // Summary card — new
+            // Summary card
             SummaryCard(ledger = selectedLedger, viewModel = viewModel)
 
             when (selectedLedger) {

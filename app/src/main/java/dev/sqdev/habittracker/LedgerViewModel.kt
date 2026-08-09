@@ -98,4 +98,56 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun openSettingsScreen() { _showSettingsScreen.value = true }
     fun closeSettingsScreen() { _showSettingsScreen.value = false }
+
+    private val _showCategoryManagement = MutableStateFlow(false)
+    val showCategoryManagement: StateFlow<Boolean> = _showCategoryManagement
+
+    fun openCategoryManagement() { _showCategoryManagement.value = true }
+    fun closeCategoryManagement() { _showCategoryManagement.value = false }
+
+    private val _pendingDeleteCategory = MutableStateFlow<Category?>(null)
+    val pendingDeleteCategory: StateFlow<Category?> = _pendingDeleteCategory
+
+    private val _pendingDeleteCount = MutableStateFlow(0)
+    val pendingDeleteCount: StateFlow<Int> = _pendingDeleteCount
+
+    fun requestDeleteCategory(category: Category) {
+        viewModelScope.launch {
+            val count = when (category.ledgerType) {
+                LedgerType.PRODUCTIVITY -> db.productivityEntryDao().countByCategory(category.id)
+                LedgerType.FOOD -> db.foodEntryDao().countByCategory(category.id)
+            }
+            _pendingDeleteCount.value = count
+            _pendingDeleteCategory.value = category
+        }
+    }
+
+    fun confirmDeleteCategory() {
+        viewModelScope.launch {
+            val category = _pendingDeleteCategory.value ?: return@launch
+            if (_pendingDeleteCount.value == 0) {
+                db.categoryDao().hardDelete(category.id)
+            } else {
+                db.categoryDao().softDelete(category.id)
+            }
+            _pendingDeleteCategory.value = null
+        }
+    }
+
+    fun cancelDeleteCategory() {
+        _pendingDeleteCategory.value = null
+    }
+
+    fun addCategory(name: String, icon: String, ledgerType: LedgerType) {
+        viewModelScope.launch {
+            db.categoryDao().insert(
+                Category(
+                    name = name,
+                    icon = icon,
+                    ledgerType = ledgerType,
+                    isCustom = true
+                )
+            )
+        }
+    }
 }

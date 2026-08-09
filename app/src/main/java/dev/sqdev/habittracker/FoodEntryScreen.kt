@@ -36,16 +36,34 @@ fun FoodEntryScreen(
         Text("Select Meal Type", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
-        LazyRow {
-            items(categories) { category ->
-                val isSelected = category.id == selectedCategory?.id
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onCategorySelected(category) },
-                    label = { Text(category.name) },
-                    modifier = Modifier.padding(end = 8.dp)
-                )
+        categories.chunked(3).forEach { rowCategories ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rowCategories.forEach { category ->
+                    val isSelected = category.id == selectedCategory?.id
+                    OutlinedButton(
+                        onClick = { onCategorySelected(category) },
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Text(category.icon, style = MaterialTheme.typography.headlineSmall)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(category.name, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                repeat(3 - rowCategories.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
