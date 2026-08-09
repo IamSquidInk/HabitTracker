@@ -150,4 +150,11 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
             )
         }
     }
+
+    fun updateCategoryName(category: Category, newName: String) {
+        viewModelScope.launch {
+            db.categoryDao().update(category.copy(name = newName))
+        }
+    }
+
 }

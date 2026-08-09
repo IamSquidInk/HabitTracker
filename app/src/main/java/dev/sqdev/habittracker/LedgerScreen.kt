@@ -88,6 +88,7 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
             CategorySettingsScreen(
                 categories = categories.values.toList(),
                 onDeleteCategory = { category -> viewModel.requestDeleteCategory(category) },
+                onEditCategory = { category, newName -> viewModel.updateCategoryName(category, newName) },
                 onAddCategory = { name, ledgerType -> viewModel.addCategory(name, "📌", ledgerType) },
                 onBack = { viewModel.closeCategoryManagement() }
             )

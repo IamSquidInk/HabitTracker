@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 fun CategorySettingsScreen(
     categories: List<Category>,
     onDeleteCategory: (Category) -> Unit,
+    onEditCategory: (Category, String) -> Unit,
     onAddCategory: (String, LedgerType) -> Unit,
     onBack: () -> Unit
 ) {
@@ -38,6 +39,7 @@ fun CategorySettingsScreen(
                     categories = productivityCategories,
                     ledgerType = LedgerType.PRODUCTIVITY,
                     onDeleteCategory = onDeleteCategory,
+                    onEditCategory = onEditCategory,
                     onAddCategory = onAddCategory
                 )
             }
@@ -50,6 +52,7 @@ fun CategorySettingsScreen(
                     categories = foodCategories,
                     ledgerType = LedgerType.FOOD,
                     onDeleteCategory = onDeleteCategory,
+                    onEditCategory = onEditCategory,
                     onAddCategory = onAddCategory
                 )
             }
@@ -63,6 +66,7 @@ fun CategorySection(
     categories: List<Category>,
     ledgerType: LedgerType,
     onDeleteCategory: (Category) -> Unit,
+    onEditCategory: (Category, String) -> Unit,
     onAddCategory: (String, LedgerType) -> Unit
 ) {
     var newCategoryName by remember { mutableStateOf("") }
@@ -71,13 +75,46 @@ fun CategorySection(
     Spacer(modifier = Modifier.height(8.dp))
 
     categories.forEach { category ->
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = category.name)
-            TextButton(onClick = { onDeleteCategory(category) }) {
-                Text("Delete")
+        var isEditing by remember { mutableStateOf(false) }
+        var editedName by remember { mutableStateOf(category.name) }
+
+        if (isEditing) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = editedName,
+                    onValueChange = { editedName = it },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+                TextButton(onClick = {
+                    if (editedName.isNotBlank()) {
+                        onEditCategory(category, editedName.trim())
+                    }
+                    isEditing = false
+                }) {
+                    Text("Save")
+                }
+                TextButton(onClick = { isEditing = false }) {
+                    Text("Cancel")
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = category.name)
+                Row {
+                    TextButton(onClick = { isEditing = true }) {
+                        Text("Edit")
+                    }
+                    TextButton(onClick = { onDeleteCategory(category) }) {
+                        Text("Delete")
+                    }
+                }
             }
         }
     }
