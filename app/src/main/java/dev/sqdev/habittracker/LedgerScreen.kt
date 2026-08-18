@@ -1,5 +1,6 @@
 package dev.sqdev.habittracker
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,7 +25,9 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
     val pendingDeleteCategory by viewModel.pendingDeleteCategory.collectAsState()
     val pendingDeleteCount by viewModel.pendingDeleteCount.collectAsState()
 
-    // MOVED: dialog now sits here, before any return statements
+    var selectedProductivityEntry by remember { mutableStateOf<ProductivityEntry?>(null) }
+    var selectedFoodEntry by remember { mutableStateOf<FoodEntry?>(null) }
+
     pendingDeleteCategory?.let { category ->
         AlertDialog(
             onDismissRequest = { viewModel.cancelDeleteCategory() },
@@ -46,6 +49,57 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    // Bottom sheet for a selected Productivity entry
+    selectedProductivityEntry?.let { entry ->
+        val category = categories[entry.categoryId]
+        EntryDetailSheet(
+            icon = category?.icon ?: "❓",
+            title = category?.name ?: "Unknown",
+            trailing = "${entry.hours}h ${entry.minutes}m",
+            details = listOf(
+                "Date" to entry.date,
+                "Time" to entry.time,
+                "Remark" to (entry.note ?: "-")
+            ),
+            onEdit = { selectedProductivityEntry = null },
+            onDuplicate = {
+                viewModel.duplicateProductivityEntry(entry)
+                selectedProductivityEntry = null
+            },
+            onDelete = {
+                viewModel.deleteProductivityEntry(entry)
+                selectedProductivityEntry = null
+            },
+            onDismiss = { selectedProductivityEntry = null }
+        )
+    }
+
+    // Bottom sheet for a selected Food entry
+    selectedFoodEntry?.let { entry ->
+        val category = categories[entry.categoryId]
+        EntryDetailSheet(
+            icon = category?.icon ?: "❓",
+            title = entry.name,
+            trailing = "",
+            details = listOf(
+                "Date" to entry.date,
+                "Time" to entry.time,
+                "Meal Type" to (category?.name ?: "Unknown"),
+                "Remark" to (entry.note ?: "-")
+            ),
+            onEdit = { selectedFoodEntry = null },
+            onDuplicate = {
+                viewModel.duplicateFoodEntry(entry)
+                selectedFoodEntry = null
+            },
+            onDelete = {
+                viewModel.deleteFoodEntry(entry)
+                selectedFoodEntry = null
+            },
+            onDismiss = { selectedFoodEntry = null }
         )
     }
 
@@ -111,7 +165,6 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                 }
             }
 
-            // Ledger switcher
             Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 SelectedLedger.entries.forEach { ledger ->
                     val isSelected = ledger == selectedLedger
@@ -124,7 +177,6 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                 }
             }
 
-            // Summary card
             SummaryCard(ledger = selectedLedger, viewModel = viewModel)
 
             when (selectedLedger) {
@@ -139,7 +191,8 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                                     time = entry.time,
                                     categoryName = category?.name ?: "Unknown",
                                     note = entry.note,
-                                    trailing = "${entry.hours}h ${entry.minutes}m"
+                                    trailing = "${entry.hours}h ${entry.minutes}m",
+                                    onClick = { selectedProductivityEntry = entry }
                                 )
                             }
                         }
@@ -156,7 +209,8 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                                     time = entry.time,
                                     categoryName = "${category?.name ?: "Unknown"} - ${entry.name}",
                                     note = entry.note,
-                                    trailing = ""
+                                    trailing = "",
+                                    onClick = { selectedFoodEntry = entry }
                                 )
                             }
                         }
@@ -206,10 +260,17 @@ fun DateHeader(date: String) {
 }
 
 @Composable
-fun EntryRow(time: String, categoryName: String, note: String?, trailing: String) {
+fun EntryRow(
+    time: String,
+    categoryName: String,
+    note: String?,
+    trailing: String,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

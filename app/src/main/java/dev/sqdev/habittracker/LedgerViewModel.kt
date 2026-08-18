@@ -157,4 +157,24 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun deleteProductivityEntry(entry: ProductivityEntry) {
+        viewModelScope.launch {
+            db.productivityEntryDao().delete(entry)
+        }
+    }
+
+    fun deleteFoodEntry(entry: FoodEntry) {
+        viewModelScope.launch {
+            db.foodEntryDao().delete(entry)
+        }
+    }
+
+    fun duplicateProductivityEntry(entry: ProductivityEntry) {
+        addProductivityEntry(entry.categoryId, entry.hours, entry.minutes, entry.note)
+    }
+
+    fun duplicateFoodEntry(entry: FoodEntry) {
+        addFoodEntry(entry.categoryId, entry.name, entry.note)
+    }
+
 }
