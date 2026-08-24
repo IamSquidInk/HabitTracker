@@ -27,6 +27,8 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
 
     var selectedProductivityEntry by remember { mutableStateOf<ProductivityEntry?>(null) }
     var selectedFoodEntry by remember { mutableStateOf<FoodEntry?>(null) }
+    var editingProductivityEntry by remember { mutableStateOf<ProductivityEntry?>(null) }
+    var editingFoodEntry by remember { mutableStateOf<FoodEntry?>(null) }
 
     pendingDeleteCategory?.let { category ->
         AlertDialog(
@@ -52,7 +54,6 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
         )
     }
 
-    // Bottom sheet for a selected Productivity entry
     selectedProductivityEntry?.let { entry ->
         val category = categories[entry.categoryId]
         EntryDetailSheet(
@@ -64,7 +65,11 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                 "Time" to entry.time,
                 "Remark" to (entry.note ?: "-")
             ),
-            onEdit = { selectedProductivityEntry = null },
+            onEdit = {
+                editingProductivityEntry = entry
+                selectedProductivityEntry = null
+                viewModel.openEntryScreen()
+            },
             onDuplicate = {
                 viewModel.duplicateProductivityEntry(entry)
                 selectedProductivityEntry = null
@@ -77,7 +82,6 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
         )
     }
 
-    // Bottom sheet for a selected Food entry
     selectedFoodEntry?.let { entry ->
         val category = categories[entry.categoryId]
         EntryDetailSheet(
@@ -90,7 +94,11 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                 "Meal Type" to (category?.name ?: "Unknown"),
                 "Remark" to (entry.note ?: "-")
             ),
-            onEdit = { selectedFoodEntry = null },
+            onEdit = {
+                editingFoodEntry = entry
+                selectedFoodEntry = null
+                viewModel.openEntryScreen()
+            },
             onDuplicate = {
                 viewModel.duplicateFoodEntry(entry)
                 selectedFoodEntry = null
@@ -104,7 +112,14 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
     }
 
     if (showEntryScreen) {
-        var selectedCategory by remember { mutableStateOf<Category?>(null) }
+        var selectedCategory by remember(editingProductivityEntry, editingFoodEntry) {
+            mutableStateOf(
+                when (selectedLedger) {
+                    SelectedLedger.PRODUCTIVITY -> editingProductivityEntry?.let { categories[it.categoryId] }
+                    SelectedLedger.FOOD -> editingFoodEntry?.let { categories[it.categoryId] }
+                }
+            )
+        }
 
         when (selectedLedger) {
             SelectedLedger.PRODUCTIVITY -> {
@@ -113,11 +128,21 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                     categories = productivityCategories,
                     selectedCategory = selectedCategory,
                     onCategorySelected = { selectedCategory = it },
+                    editingEntry = editingProductivityEntry,
                     onSave = { categoryId, hours, minutes, note ->
-                        viewModel.addProductivityEntry(categoryId, hours, minutes, note)
+                        val entry = editingProductivityEntry
+                        if (entry != null) {
+                            viewModel.updateProductivityEntry(entry, categoryId, hours, minutes, note)
+                        } else {
+                            viewModel.addProductivityEntry(categoryId, hours, minutes, note)
+                        }
+                        editingProductivityEntry = null
                         viewModel.closeEntryScreen()
                     },
-                    onBack = { viewModel.closeEntryScreen() }
+                    onBack = {
+                        editingProductivityEntry = null
+                        viewModel.closeEntryScreen()
+                    }
                 )
             }
             SelectedLedger.FOOD -> {
@@ -126,11 +151,21 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                     categories = foodCategories,
                     selectedCategory = selectedCategory,
                     onCategorySelected = { selectedCategory = it },
+                    editingEntry = editingFoodEntry,
                     onSave = { categoryId, name, note ->
-                        viewModel.addFoodEntry(categoryId, name, note)
+                        val entry = editingFoodEntry
+                        if (entry != null) {
+                            viewModel.updateFoodEntry(entry, categoryId, name, note)
+                        } else {
+                            viewModel.addFoodEntry(categoryId, name, note)
+                        }
+                        editingFoodEntry = null
                         viewModel.closeEntryScreen()
                     },
-                    onBack = { viewModel.closeEntryScreen() }
+                    onBack = {
+                        editingFoodEntry = null
+                        viewModel.closeEntryScreen()
+                    }
                 )
             }
         }

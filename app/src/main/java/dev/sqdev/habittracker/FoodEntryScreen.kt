@@ -16,6 +16,7 @@ fun FoodEntryScreen(
     categories: List<Category>,
     onCategorySelected: (Category) -> Unit,
     selectedCategory: Category?,
+    editingEntry: FoodEntry? = null,
     onSave: (Long, String, String?) -> Unit,
     onBack: () -> Unit
 ) {

@@ -177,4 +177,16 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         addFoodEntry(entry.categoryId, entry.name, entry.note)
     }
 
+    fun updateProductivityEntry(entry: ProductivityEntry, categoryId: Long, hours: Int, minutes: Int, note: String?) {
+        viewModelScope.launch {
+            db.productivityEntryDao().update(entry.copy(categoryId = categoryId, hours = hours, minutes = minutes, note = note))
+        }
+    }
+
+    fun updateFoodEntry(entry: FoodEntry, categoryId: Long, name: String, note: String?) {
+        viewModelScope.launch {
+            db.foodEntryDao().update(entry.copy(categoryId = categoryId, name = name, note = note))
+        }
+    }
+
 }

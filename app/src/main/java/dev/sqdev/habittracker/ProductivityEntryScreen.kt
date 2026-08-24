@@ -16,12 +16,13 @@ fun ProductivityEntryScreen(
     categories: List<Category>,
     onCategorySelected: (Category) -> Unit,
     selectedCategory: Category?,
+    editingEntry: ProductivityEntry? = null,
     onSave: (Long, Int, Int, String?) -> Unit,
     onBack: () -> Unit
 ) {
-    var hours by remember { mutableStateOf("") }
-    var minutes by remember { mutableStateOf("") }
-    var remark by remember { mutableStateOf("") }
+    var hours by remember { mutableStateOf(editingEntry?.hours?.toString() ?: "") }
+    var minutes by remember { mutableStateOf(editingEntry?.minutes?.toString() ?: "") }
+    var remark by remember { mutableStateOf(editingEntry?.note ?: "") }
     var activeField by remember { mutableStateOf(NumpadField.HOURS) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
