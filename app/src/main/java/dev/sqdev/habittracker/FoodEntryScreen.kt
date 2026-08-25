@@ -1,8 +1,6 @@
 package dev.sqdev.habittracker
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -18,10 +16,11 @@ fun FoodEntryScreen(
     selectedCategory: Category?,
     editingEntry: FoodEntry? = null,
     onSave: (Long, String, String?) -> Unit,
+    onSaveAndAddAnother: ((Long, String, String?) -> Unit)? = null,
     onBack: () -> Unit
 ) {
-    var mealName by remember { mutableStateOf("") }
-    var remark by remember { mutableStateOf("") }
+    var mealName by remember { mutableStateOf(editingEntry?.name ?: "") }
+    var remark by remember { mutableStateOf(editingEntry?.note ?: "") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -110,5 +109,27 @@ fun FoodEntryScreen(
         ) {
             Text("Save Entry")
         }
+
+        if (editingEntry == null && onSaveAndAddAnother != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = {
+                    when {
+                        selectedCategory == null -> errorMessage = "Please select a meal type"
+                        mealName.isBlank() -> errorMessage = "Please enter what you ate"
+                        else -> {
+                            errorMessage = null
+                            onSaveAndAddAnother(selectedCategory.id, mealName.trim(), remark.ifBlank { null })
+                            mealName = ""
+                            remark = ""
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Save & Add Another")
+            }
+        }
+
     }
 }

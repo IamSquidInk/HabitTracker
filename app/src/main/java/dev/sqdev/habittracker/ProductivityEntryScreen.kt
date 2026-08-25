@@ -18,6 +18,7 @@ fun ProductivityEntryScreen(
     selectedCategory: Category?,
     editingEntry: ProductivityEntry? = null,
     onSave: (Long, Int, Int, String?) -> Unit,
+    onSaveAndAddAnother: ((Long, Int, Int, String?) -> Unit)? = null,
     onBack: () -> Unit
 ) {
     var hours by remember { mutableStateOf(editingEntry?.hours?.toString() ?: "") }
@@ -25,6 +26,16 @@ fun ProductivityEntryScreen(
     var remark by remember { mutableStateOf(editingEntry?.note ?: "") }
     var activeField by remember { mutableStateOf(NumpadField.HOURS) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    fun validated(): Pair<Int, Int>? {
+        val h = hours.toIntOrNull() ?: 0
+        val m = minutes.toIntOrNull() ?: 0
+        return when {
+            h !in 0..23 -> { errorMessage = "Hours must be between 0 and 23"; null }
+            m !in 0..59 -> { errorMessage = "Minutes must be between 0 and 59"; null }
+            else -> { errorMessage = null; Pair(h, m) }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
@@ -158,5 +169,32 @@ fun ProductivityEntryScreen(
         ) {
             Text("Save Entry")
         }
+
+
+
+        if (editingEntry == null && onSaveAndAddAnother != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = {
+                    validated()?.let { (h, m) ->
+                        selectedCategory?.let { category ->
+                            onSaveAndAddAnother(category.id, h, m, remark.ifBlank { null })
+                            hours = ""
+                            minutes = ""
+                            remark = ""
+                            activeField = NumpadField.HOURS
+                        }
+                    }
+                },
+                enabled = selectedCategory != null && (hours.isNotEmpty() || minutes.isNotEmpty()),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Save & Add Another")
+            }
+        }
+
     }
+
+
+
 }

@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.dp
 fun CategorySettingsScreen(
     categories: List<Category>,
     onDeleteCategory: (Category) -> Unit,
-    onEditCategory: (Category, String) -> Unit,
-    onAddCategory: (String, LedgerType) -> Unit,
+    onEditCategory: (Category, String, String) -> Unit,
+    onAddCategory: (String, String, LedgerType) -> Unit,
     onBack: () -> Unit
 ) {
     val productivityCategories = categories.filter { it.ledgerType == LedgerType.PRODUCTIVITY }
@@ -66,10 +66,19 @@ fun CategorySection(
     categories: List<Category>,
     ledgerType: LedgerType,
     onDeleteCategory: (Category) -> Unit,
-    onEditCategory: (Category, String) -> Unit,
-    onAddCategory: (String, LedgerType) -> Unit
+    onEditCategory: (Category, String, String) -> Unit,
+    onAddCategory: (String, String, LedgerType) -> Unit
 ) {
     var newCategoryName by remember { mutableStateOf("") }
+    var newCategoryIcon by remember { mutableStateOf("📌") }
+    var showIconPicker by remember { mutableStateOf(false) }
+
+    if (showIconPicker) {
+        IconPickerDialog(
+            onIconSelected = { newCategoryIcon = it },
+            onDismiss = { showIconPicker = false }
+        )
+    }
 
     Text(title, style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(8.dp))
@@ -77,12 +86,24 @@ fun CategorySection(
     categories.forEach { category ->
         var isEditing by remember { mutableStateOf(false) }
         var editedName by remember { mutableStateOf(category.name) }
+        var editedIcon by remember { mutableStateOf(category.icon) }
+        var showEditIconPicker by remember { mutableStateOf(false) }
+
+        if (showEditIconPicker) {
+            IconPickerDialog(
+                onIconSelected = { editedIcon = it },
+                onDismiss = { showEditIconPicker = false }
+            )
+        }
 
         if (isEditing) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                TextButton(onClick = { showEditIconPicker = true }) {
+                    Text(editedIcon, style = MaterialTheme.typography.headlineSmall)
+                }
                 OutlinedTextField(
                     value = editedName,
                     onValueChange = { editedName = it },
@@ -91,13 +112,17 @@ fun CategorySection(
                 )
                 TextButton(onClick = {
                     if (editedName.isNotBlank()) {
-                        onEditCategory(category, editedName.trim())
+                        onEditCategory(category, editedName.trim(), editedIcon)
                     }
                     isEditing = false
                 }) {
                     Text("Save")
                 }
-                TextButton(onClick = { isEditing = false }) {
+                TextButton(onClick = {
+                    editedName = category.name
+                    editedIcon = category.icon
+                    isEditing = false
+                }) {
                     Text("Cancel")
                 }
             }
@@ -106,7 +131,11 @@ fun CategorySection(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = category.name)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(category.icon, style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = category.name)
+                }
                 Row {
                     TextButton(onClick = { isEditing = true }) {
                         Text("Edit")
@@ -122,6 +151,9 @@ fun CategorySection(
     Spacer(modifier = Modifier.height(8.dp))
 
     Row(verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = { showIconPicker = true }) {
+            Text(newCategoryIcon, style = MaterialTheme.typography.headlineSmall)
+        }
         OutlinedTextField(
             value = newCategoryName,
             onValueChange = { newCategoryName = it },
@@ -131,8 +163,9 @@ fun CategorySection(
         )
         TextButton(onClick = {
             if (newCategoryName.isNotBlank()) {
-                onAddCategory(newCategoryName.trim(), ledgerType)
+                onAddCategory(newCategoryName.trim(), newCategoryIcon, ledgerType)
                 newCategoryName = ""
+                newCategoryIcon = "📌"
             }
         }) {
             Text("Add")

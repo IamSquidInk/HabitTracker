@@ -1,5 +1,6 @@
 package dev.sqdev.habittracker
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -139,6 +140,9 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                         editingProductivityEntry = null
                         viewModel.closeEntryScreen()
                     },
+                    onSaveAndAddAnother = { categoryId, hours, minutes, note ->
+                        viewModel.addProductivityEntry(categoryId, hours, minutes, note)
+                    },
                     onBack = {
                         editingProductivityEntry = null
                         viewModel.closeEntryScreen()
@@ -162,6 +166,9 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                         editingFoodEntry = null
                         viewModel.closeEntryScreen()
                     },
+                    onSaveAndAddAnother = { categoryId, name, note ->
+                        viewModel.addFoodEntry(categoryId, name, note)
+                    },
                     onBack = {
                         editingFoodEntry = null
                         viewModel.closeEntryScreen()
@@ -177,8 +184,8 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
             CategorySettingsScreen(
                 categories = categories.values.toList(),
                 onDeleteCategory = { category -> viewModel.requestDeleteCategory(category) },
-                onEditCategory = { category, newName -> viewModel.updateCategoryName(category, newName) },
-                onAddCategory = { name, ledgerType -> viewModel.addCategory(name, "📌", ledgerType) },
+                onEditCategory = { category, newName, newIcon -> viewModel.updateCategory(category, newName, newIcon) },
+                onAddCategory = { name, icon, ledgerType -> viewModel.addCategory(name, icon, ledgerType) },
                 onBack = { viewModel.closeCategoryManagement() }
             )
         } else {
@@ -201,14 +208,15 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
             }
 
             Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                SelectedLedger.entries.forEach { ledger ->
-                    val isSelected = ledger == selectedLedger
-                    Button(
-                        onClick = { viewModel.selectLedger(ledger) },
-                        modifier = Modifier.weight(1f).padding(4.dp)
-                    ) {
-                        Text(ledger.name)
-                    }
+                Button(
+                    onClick = {
+                        val next = if (selectedLedger == SelectedLedger.PRODUCTIVITY)
+                            SelectedLedger.FOOD else SelectedLedger.PRODUCTIVITY
+                        viewModel.selectLedger(next)
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(4.dp)
+                ) {
+                    Text("${selectedLedger.name}  ⇄")
                 }
             }
 
@@ -216,37 +224,43 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
 
             when (selectedLedger) {
                 SelectedLedger.PRODUCTIVITY -> {
-                    val grouped = productivityEntries.groupBy { it.date }
+                    val groupedByDate = productivityEntries.groupBy { it.date }
                     LazyColumn {
-                        grouped.forEach { (date, entries) ->
+                        groupedByDate.forEach { (date, dateEntries) ->
                             item { DateHeader(date) }
-                            items(entries) { entry ->
-                                val category = categories[entry.categoryId]
-                                EntryRow(
-                                    time = entry.time,
-                                    categoryName = category?.name ?: "Unknown",
-                                    note = entry.note,
-                                    trailing = "${entry.hours}h ${entry.minutes}m",
-                                    onClick = { selectedProductivityEntry = entry }
-                                )
+                            val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
+                            groupedByHour.forEach { (hour, hourEntries) ->
+                                item { HourHeader(hour) }
+                                items(hourEntries) { entry ->
+                                    val category = categories[entry.categoryId]
+                                    EntryRow(
+                                        categoryName = category?.name ?: "Unknown",
+                                        note = entry.note,
+                                        trailing = "${entry.hours}h ${entry.minutes}m",
+                                        onClick = { selectedProductivityEntry = entry }
+                                    )
+                                }
                             }
                         }
                     }
                 }
                 SelectedLedger.FOOD -> {
-                    val grouped = foodEntries.groupBy { it.date }
+                    val groupedByDate = foodEntries.groupBy { it.date }
                     LazyColumn {
-                        grouped.forEach { (date, entries) ->
+                        groupedByDate.forEach { (date, dateEntries) ->
                             item { DateHeader(date) }
-                            items(entries) { entry ->
-                                val category = categories[entry.categoryId]
-                                EntryRow(
-                                    time = entry.time,
-                                    categoryName = "${category?.name ?: "Unknown"} - ${entry.name}",
-                                    note = entry.note,
-                                    trailing = "",
-                                    onClick = { selectedFoodEntry = entry }
-                                )
+                            val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
+                            groupedByHour.forEach { (hour, hourEntries) ->
+                                item { HourHeader(hour) }
+                                items(hourEntries) { entry ->
+                                    val category = categories[entry.categoryId]
+                                    EntryRow(
+                                        categoryName = "${category?.name ?: "Unknown"} - ${entry.name}",
+                                        note = entry.note,
+                                        trailing = "",
+                                        onClick = { selectedFoodEntry = entry }
+                                    )
+                                }
                             }
                         }
                     }
@@ -287,16 +301,34 @@ fun SummaryCard(ledger: SelectedLedger, viewModel: LedgerViewModel) {
 
 @Composable
 fun DateHeader(date: String) {
+    val displayDate = remember(date) {
+        try {
+            val parser = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            val formatter = java.text.SimpleDateFormat("EEE, MMM d", java.util.Locale.getDefault())
+            formatter.format(parser.parse(date)!!)
+        } catch (e: Exception) {
+            date
+        }
+    }
     Text(
-        text = date,
+        text = displayDate,
         style = MaterialTheme.typography.titleMedium,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }
 
 @Composable
+fun HourHeader(hour: String) {
+    Text(
+        text = "$hour:00",
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp)
+    )
+}
+
+@Composable
 fun EntryRow(
-    time: String,
     categoryName: String,
     note: String?,
     trailing: String,
@@ -306,11 +338,17 @@ fun EntryRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            Text(text = time, style = MaterialTheme.typography.bodySmall)
+        Box(
+            modifier = Modifier
+                .width(2.dp)
+                .height(20.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
             Text(text = categoryName + (note?.let { " – $it" } ?: ""))
         }
         Text(text = trailing)
