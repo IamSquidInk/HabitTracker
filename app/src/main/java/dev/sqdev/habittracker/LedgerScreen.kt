@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,6 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
@@ -30,6 +34,7 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
     var selectedFoodEntry by remember { mutableStateOf<FoodEntry?>(null) }
     var editingProductivityEntry by remember { mutableStateOf<ProductivityEntry?>(null) }
     var editingFoodEntry by remember { mutableStateOf<FoodEntry?>(null) }
+    var showReportsComingSoon by remember { mutableStateOf(false) }
 
     pendingDeleteCategory?.let { category ->
         AlertDialog(
@@ -50,6 +55,19 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
             dismissButton = {
                 TextButton(onClick = { viewModel.cancelDeleteCategory() }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showReportsComingSoon) {
+        AlertDialog(
+            onDismissRequest = { showReportsComingSoon = false },
+            title = { Text("Reports") },
+            text = { Text("Coming soon!") },
+            confirmButton = {
+                TextButton(onClick = { showReportsComingSoon = false }) {
+                    Text("OK")
                 }
             }
         )
@@ -207,25 +225,18 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                 }
             }
 
-            Row(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                Button(
-                    onClick = {
-                        val next = if (selectedLedger == SelectedLedger.PRODUCTIVITY)
-                            SelectedLedger.FOOD else SelectedLedger.PRODUCTIVITY
-                        viewModel.selectLedger(next)
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(4.dp)
-                ) {
-                    Text("${selectedLedger.name}  ⇄")
-                }
-            }
+            Text(
+                text = selectedLedger.name,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
 
             SummaryCard(ledger = selectedLedger, viewModel = viewModel)
 
             when (selectedLedger) {
                 SelectedLedger.PRODUCTIVITY -> {
                     val groupedByDate = productivityEntries.groupBy { it.date }
-                    LazyColumn {
+                    LazyColumn(modifier = Modifier.weight(1f)) {
                         groupedByDate.forEach { (date, dateEntries) ->
                             item { DateHeader(date) }
                             val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
@@ -234,6 +245,8 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                                 items(hourEntries) { entry ->
                                     val category = categories[entry.categoryId]
                                     EntryRow(
+                                        categoryId = entry.categoryId,
+                                        icon = category?.icon ?: "❓",
                                         categoryName = category?.name ?: "Unknown",
                                         note = entry.note,
                                         trailing = "${entry.hours}h ${entry.minutes}m",
@@ -246,7 +259,7 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                 }
                 SelectedLedger.FOOD -> {
                     val groupedByDate = foodEntries.groupBy { it.date }
-                    LazyColumn {
+                    LazyColumn(modifier = Modifier.weight(1f)) {
                         groupedByDate.forEach { (date, dateEntries) ->
                             item { DateHeader(date) }
                             val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
@@ -255,6 +268,8 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                                 items(hourEntries) { entry ->
                                     val category = categories[entry.categoryId]
                                     EntryRow(
+                                        categoryId = entry.categoryId,
+                                        icon = category?.icon ?: "❓",
                                         categoryName = "${category?.name ?: "Unknown"} - ${entry.name}",
                                         note = entry.note,
                                         trailing = "",
@@ -264,6 +279,26 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                             }
                         }
                     }
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(onClick = {
+                    val next = if (selectedLedger == SelectedLedger.PRODUCTIVITY)
+                        SelectedLedger.FOOD else SelectedLedger.PRODUCTIVITY
+                    viewModel.selectLedger(next)
+                }) {
+                    Text("${selectedLedger.name}  ⇄")
+                }
+
+                OutlinedButton(onClick = { showReportsComingSoon = true }) {
+                    Text("Reports")
                 }
             }
         }
@@ -329,6 +364,8 @@ fun HourHeader(hour: String) {
 
 @Composable
 fun EntryRow(
+    categoryId: Long,
+    icon: String,
     categoryName: String,
     note: String?,
     trailing: String,
@@ -337,20 +374,40 @@ fun EntryRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
                 .width(2.dp)
-                .height(20.dp)
+                .height(36.dp)
                 .background(MaterialTheme.colorScheme.outlineVariant)
         )
         Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = categoryName + (note?.let { " – $it" } ?: ""))
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(categoryColor(categoryId))
+                .clickable { onClick() }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color.White.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(icon, style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = categoryName + (note?.let { " – $it" } ?: ""),
+                modifier = Modifier.weight(1f)
+            )
+            Text(text = trailing)
         }
-        Text(text = trailing)
     }
 }
