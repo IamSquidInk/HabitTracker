@@ -1,30 +1,29 @@
 package dev.sqdev.habittracker
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
@@ -156,18 +155,18 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                     selectedCategory = selectedCategory,
                     onCategorySelected = { selectedCategory = it },
                     editingEntry = editingProductivityEntry,
-                    onSave = { categoryId, hours, minutes, note ->
+                    onSave = { categoryId, hours, minutes, note, date ->
                         val entry = editingProductivityEntry
                         if (entry != null) {
-                            viewModel.updateProductivityEntry(entry, categoryId, hours, minutes, note)
+                            viewModel.updateProductivityEntry(entry, categoryId, hours, minutes, note, date)
                         } else {
-                            viewModel.addProductivityEntry(categoryId, hours, minutes, note)
+                            viewModel.addProductivityEntry(categoryId, hours, minutes, note, date)
                         }
                         editingProductivityEntry = null
                         viewModel.closeEntryScreen()
                     },
-                    onSaveAndAddAnother = { categoryId, hours, minutes, note ->
-                        viewModel.addProductivityEntry(categoryId, hours, minutes, note)
+                    onSaveAndAddAnother = { categoryId, hours, minutes, note, date ->
+                        viewModel.addProductivityEntry(categoryId, hours, minutes, note, date)
                     },
                     onBack = {
                         editingProductivityEntry = null
@@ -182,18 +181,18 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                     selectedCategory = selectedCategory,
                     onCategorySelected = { selectedCategory = it },
                     editingEntry = editingFoodEntry,
-                    onSave = { categoryId, name, note ->
+                    onSave = { categoryId, name, note, date ->
                         val entry = editingFoodEntry
                         if (entry != null) {
-                            viewModel.updateFoodEntry(entry, categoryId, name, note)
+                            viewModel.updateFoodEntry(entry, categoryId, name, note, date)
                         } else {
-                            viewModel.addFoodEntry(categoryId, name, note)
+                            viewModel.addFoodEntry(categoryId, name, note, date)
                         }
                         editingFoodEntry = null
                         viewModel.closeEntryScreen()
                     },
-                    onSaveAndAddAnother = { categoryId, name, note ->
-                        viewModel.addFoodEntry(categoryId, name, note)
+                    onSaveAndAddAnother = { categoryId, name, note, date ->
+                        viewModel.addFoodEntry(categoryId, name, note, date)
                     },
                     onBack = {
                         editingFoodEntry = null
@@ -256,15 +255,21 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                                 val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
                                 groupedByHour.forEach { (hour, hourEntries) ->
                                     item { HourHeader(hour) }
-                                    items(hourEntries) { entry ->
-                                        val category = categories[entry.categoryId]
-                                        EntryRow(
-                                            categoryId = entry.categoryId,
-                                            icon = category?.icon ?: "❓",
-                                            categoryName = category?.name ?: "Unknown",
-                                            note = entry.note,
-                                            trailing = "${entry.hours}h ${entry.minutes}m",
-                                            onClick = { selectedProductivityEntry = entry }
+                                    item {
+                                        EntryGroup(
+                                            entries = hourEntries.map { entry ->
+                                                {
+                                                    val category = categories[entry.categoryId]
+                                                    EntryContent(
+                                                        categoryId = entry.categoryId,
+                                                        icon = category?.icon ?: "❓",
+                                                        categoryName = category?.name ?: "Unknown",
+                                                        note = entry.note,
+                                                        trailing = "${entry.hours}h ${entry.minutes}m",
+                                                        onClick = { selectedProductivityEntry = entry }
+                                                    )
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -279,15 +284,21 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                                 val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
                                 groupedByHour.forEach { (hour, hourEntries) ->
                                     item { HourHeader(hour) }
-                                    items(hourEntries) { entry ->
-                                        val category = categories[entry.categoryId]
-                                        EntryRow(
-                                            categoryId = entry.categoryId,
-                                            icon = category?.icon ?: "❓",
-                                            categoryName = "${category?.name ?: "Unknown"} - ${entry.name}",
-                                            note = entry.note,
-                                            trailing = "",
-                                            onClick = { selectedFoodEntry = entry }
+                                    item {
+                                        EntryGroup(
+                                            entries = hourEntries.map { entry ->
+                                                {
+                                                    val category = categories[entry.categoryId]
+                                                    EntryContent(
+                                                        categoryId = entry.categoryId,
+                                                        icon = category?.icon ?: "❓",
+                                                        categoryName = "${category?.name ?: "Unknown"} - ${entry.name}",
+                                                        note = entry.note,
+                                                        trailing = "",
+                                                        onClick = { selectedFoodEntry = entry }
+                                                    )
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -376,17 +387,8 @@ fun SummaryCard(ledger: SelectedLedger, viewModel: LedgerViewModel) {
 
 @Composable
 fun DateHeader(date: String) {
-    val displayDate = remember(date) {
-        try {
-            val parser = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-            val formatter = java.text.SimpleDateFormat("EEE, MMM d", java.util.Locale.getDefault())
-            formatter.format(parser.parse(date)!!)
-        } catch (e: Exception) {
-            date
-        }
-    }
     Text(
-        text = displayDate,
+        text = formatDateForDisplay(date),
         style = MaterialTheme.typography.titleMedium,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
@@ -403,7 +405,31 @@ fun HourHeader(hour: String) {
 }
 
 @Composable
-fun EntryRow(
+fun EntryGroup(entries: List<@Composable () -> Unit>) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .height(IntrinsicSize.Min)
+    ) {
+        Box(
+            modifier = Modifier
+                .width(2.dp)
+                .fillMaxHeight()
+                .background(MaterialTheme.colorScheme.outlineVariant)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            entries.forEach { it() }
+        }
+    }
+}
+
+@Composable
+fun EntryContent(
     categoryId: Long,
     icon: String,
     categoryName: String,
@@ -414,41 +440,27 @@ fun EntryRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .clip(RoundedCornerShape(8.dp))
+            .background(categoryColor(categoryId))
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .width(2.dp)
-                .height(36.dp)
-                .background(MaterialTheme.colorScheme.outlineVariant)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(8.dp))
-                .background(categoryColor(categoryId))
-                .clickable { onClick() }
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .size(28.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(Color.White.copy(alpha = 0.7f)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color.White.copy(alpha = 0.7f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(icon, style = MaterialTheme.typography.bodyMedium)
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = categoryName + (note?.let { " – $it" } ?: ""),
-                color = CategoryEntryTextColor,
-                modifier = Modifier.weight(1f)
-            )
-            Text(text = trailing, color = CategoryEntryTextColor)
+            Text(icon, style = MaterialTheme.typography.bodyMedium)
         }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = categoryName + (note?.let { " – $it" } ?: ""),
+            color = CategoryEntryTextColor,
+            modifier = Modifier.weight(1f)
+        )
+        Text(text = trailing, color = CategoryEntryTextColor)
     }
 }

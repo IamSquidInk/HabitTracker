@@ -26,8 +26,8 @@ fun ProductivityEntryScreen(
     onCategorySelected: (Category) -> Unit,
     selectedCategory: Category?,
     editingEntry: ProductivityEntry? = null,
-    onSave: (Long, Int, Int, String?) -> Unit,
-    onSaveAndAddAnother: ((Long, Int, Int, String?) -> Unit)? = null,
+    onSave: (Long, Int, Int, String?, String) -> Unit,
+    onSaveAndAddAnother: ((Long, Int, Int, String?, String) -> Unit)? = null,
     onBack: () -> Unit
 ) {
     var hours by remember { mutableStateOf(editingEntry?.hours?.toString() ?: "") }
@@ -35,6 +35,7 @@ fun ProductivityEntryScreen(
     var remark by remember { mutableStateOf(editingEntry?.note ?: "") }
     var activeField by remember { mutableStateOf(NumpadField.HOURS) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var entryDate by remember { mutableStateOf(editingEntry?.date ?: todayDateString()) }
 
     val focusManager = LocalFocusManager.current
 
@@ -164,7 +165,7 @@ fun ProductivityEntryScreen(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Right column: Remark + Save buttons
+                // Right column: Remark + Date + Save buttons
                 Column(
                     modifier = Modifier.weight(0.38f),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -179,6 +180,10 @@ fun ProductivityEntryScreen(
                         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
 
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    DatePickerField(date = entryDate, onDateChange = { entryDate = it })
+
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Button(
@@ -191,7 +196,7 @@ fun ProductivityEntryScreen(
                                 else -> {
                                     errorMessage = null
                                     selectedCategory?.let { category ->
-                                        onSave(category.id, h, m, remark.ifBlank { null })
+                                        onSave(category.id, h, m, remark.ifBlank { null }, entryDate)
                                     }
                                 }
                             }
@@ -208,7 +213,7 @@ fun ProductivityEntryScreen(
                             onClick = {
                                 validated()?.let { (h, m) ->
                                     selectedCategory?.let { category ->
-                                        onSaveAndAddAnother(category.id, h, m, remark.ifBlank { null })
+                                        onSaveAndAddAnother(category.id, h, m, remark.ifBlank { null }, entryDate)
                                         hours = ""
                                         minutes = ""
                                         remark = ""

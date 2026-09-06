@@ -43,16 +43,14 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         _selectedLedger.value = ledger
     }
 
-    fun addProductivityEntry(categoryId: Long, hours: Int, minutes: Int, note: String? = null) {
+    fun addProductivityEntry(categoryId: Long, hours: Int, minutes: Int, note: String? = null, date: String) {
         viewModelScope.launch {
-            val sdfDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
             val sdfTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
-            val now = sdfDate.format(java.util.Date())
             val time = sdfTime.format(java.util.Date())
             db.productivityEntryDao().insert(
                 ProductivityEntry(
                     categoryId = categoryId,
-                    date = now,
+                    date = date,
                     time = time,
                     hours = hours,
                     minutes = minutes,
@@ -62,21 +60,31 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun addFoodEntry(categoryId: Long, name: String, note: String? = null) {
+    fun addFoodEntry(categoryId: Long, name: String, note: String? = null, date: String) {
         viewModelScope.launch {
-            val sdfDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
             val sdfTime = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
-            val now = sdfDate.format(java.util.Date())
             val time = sdfTime.format(java.util.Date())
             db.foodEntryDao().insert(
                 FoodEntry(
                     categoryId = categoryId,
                     name = name,
-                    date = now,
+                    date = date,
                     time = time,
                     note = note
                 )
             )
+        }
+    }
+
+    fun updateProductivityEntry(entry: ProductivityEntry, categoryId: Long, hours: Int, minutes: Int, note: String?, date: String) {
+        viewModelScope.launch {
+            db.productivityEntryDao().update(entry.copy(categoryId = categoryId, hours = hours, minutes = minutes, note = note, date = date))
+        }
+    }
+
+    fun updateFoodEntry(entry: FoodEntry, categoryId: Long, name: String, note: String?, date: String) {
+        viewModelScope.launch {
+            db.foodEntryDao().update(entry.copy(categoryId = categoryId, name = name, note = note, date = date))
         }
     }
 
@@ -181,11 +189,11 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun duplicateProductivityEntry(entry: ProductivityEntry) {
-        addProductivityEntry(entry.categoryId, entry.hours, entry.minutes, entry.note)
+        addProductivityEntry(entry.categoryId, entry.hours, entry.minutes, entry.note, todayDateString())
     }
 
     fun duplicateFoodEntry(entry: FoodEntry) {
-        addFoodEntry(entry.categoryId, entry.name, entry.note)
+        addFoodEntry(entry.categoryId, entry.name, entry.note, todayDateString())
     }
 
     fun updateProductivityEntry(entry: ProductivityEntry, categoryId: Long, hours: Int, minutes: Int, note: String?) {

@@ -24,13 +24,14 @@ fun FoodEntryScreen(
     onCategorySelected: (Category) -> Unit,
     selectedCategory: Category?,
     editingEntry: FoodEntry? = null,
-    onSave: (Long, String, String?) -> Unit,
-    onSaveAndAddAnother: ((Long, String, String?) -> Unit)? = null,
+    onSave: (Long, String, String?, String) -> Unit,
+    onSaveAndAddAnother: ((Long, String, String?, String) -> Unit)? = null,
     onBack: () -> Unit
 ) {
     var mealName by remember { mutableStateOf(editingEntry?.name ?: "") }
     var remark by remember { mutableStateOf(editingEntry?.note ?: "") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var entryDate by remember { mutableStateOf(editingEntry?.date ?: todayDateString()) }
 
     val focusManager = LocalFocusManager.current
 
@@ -120,11 +121,15 @@ fun FoodEntryScreen(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Right column: Save buttons
+                // Right column: Date + Save buttons
                 Column(
                     modifier = Modifier.weight(0.38f),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    DatePickerField(date = entryDate, onDateChange = { entryDate = it })
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     Button(
                         onClick = {
                             when {
@@ -132,7 +137,7 @@ fun FoodEntryScreen(
                                 mealName.isBlank() -> errorMessage = "Please enter what you ate"
                                 else -> {
                                     errorMessage = null
-                                    onSave(selectedCategory.id, mealName.trim(), remark.ifBlank { null })
+                                    onSave(selectedCategory.id, mealName.trim(), remark.ifBlank { null }, entryDate)
                                 }
                             }
                         },
@@ -150,7 +155,7 @@ fun FoodEntryScreen(
                                     mealName.isBlank() -> errorMessage = "Please enter what you ate"
                                     else -> {
                                         errorMessage = null
-                                        onSaveAndAddAnother(selectedCategory.id, mealName.trim(), remark.ifBlank { null })
+                                        onSaveAndAddAnother(selectedCategory.id, mealName.trim(), remark.ifBlank { null }, entryDate)
                                         mealName = ""
                                         remark = ""
                                     }
