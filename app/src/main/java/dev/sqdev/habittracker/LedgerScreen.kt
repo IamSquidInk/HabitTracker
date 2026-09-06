@@ -1,6 +1,8 @@
 package dev.sqdev.habittracker
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +19,9 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+
 
 @Composable
 fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
@@ -219,12 +224,6 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
 
         Column(modifier = Modifier.fillMaxSize()) {
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                IconButton(onClick = { viewModel.openSettingsScreen() }) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings")
-                }
-            }
-
             Text(
                 text = selectedLedger.name,
                 style = MaterialTheme.typography.titleLarge,
@@ -282,30 +281,55 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                 }
             }
 
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                    .padding(12.dp)
             ) {
-                OutlinedButton(onClick = {
-                    val next = if (selectedLedger == SelectedLedger.PRODUCTIVITY)
-                        SelectedLedger.FOOD else SelectedLedger.PRODUCTIVITY
-                    viewModel.selectLedger(next)
-                }) {
-                    Text("${selectedLedger.name}  ⇄")
-                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(onClick = {
+                            val next = if (selectedLedger == SelectedLedger.PRODUCTIVITY)
+                                SelectedLedger.FOOD else SelectedLedger.PRODUCTIVITY
+                            viewModel.selectLedger(next)
+                        }) {
+                            Text("${selectedLedger.name}  ⇄")
+                        }
 
-                OutlinedButton(onClick = { showReportsComingSoon = true }) {
-                    Text("Reports")
+                        OutlinedButton(onClick = { showReportsComingSoon = true }) {
+                            Text("Reports")
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .border(1.5.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        IconButton(onClick = { viewModel.openSettingsScreen() }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
+                    }
                 }
             }
         }
 
         FloatingActionButton(
             onClick = { viewModel.openEntryScreen() },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 110.dp)
         ) {
             Text("+")
         }
