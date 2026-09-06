@@ -14,6 +14,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
+
 
 @Composable
 fun ProductivityEntryScreen(
@@ -30,6 +35,8 @@ fun ProductivityEntryScreen(
     var remark by remember { mutableStateOf(editingEntry?.note ?: "") }
     var activeField by remember { mutableStateOf(NumpadField.HOURS) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val focusManager = LocalFocusManager.current
 
     fun validated(): Pair<Int, Int>? {
         val h = hours.toIntOrNull() ?: 0
@@ -167,7 +174,9 @@ fun ProductivityEntryScreen(
                         onValueChange = { remark = it },
                         label = { Text("Remark") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))

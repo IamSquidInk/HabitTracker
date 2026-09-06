@@ -10,6 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
 
 @Composable
 fun CategorySettingsScreen(
@@ -21,6 +25,7 @@ fun CategorySettingsScreen(
 ) {
     val productivityCategories = categories.filter { it.ledgerType == LedgerType.PRODUCTIVITY }
     val foodCategories = categories.filter { it.ledgerType == LedgerType.FOOD }
+
 
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -72,6 +77,7 @@ fun CategorySection(
     var newCategoryName by remember { mutableStateOf("") }
     var newCategoryIcon by remember { mutableStateOf("📌") }
     var showIconPicker by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     if (showIconPicker) {
         IconPickerDialog(
@@ -108,7 +114,9 @@ fun CategorySection(
                     value = editedName,
                     onValueChange = { editedName = it },
                     singleLine = true,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                 )
                 TextButton(onClick = {
                     if (editedName.isNotBlank()) {
@@ -159,7 +167,9 @@ fun CategorySection(
             onValueChange = { newCategoryName = it },
             label = { Text("New category") },
             singleLine = true,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
         )
         TextButton(onClick = {
             if (newCategoryName.isNotBlank()) {

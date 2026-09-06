@@ -12,6 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.focus.FocusDirection
 
 @Composable
 fun FoodEntryScreen(
@@ -26,6 +31,8 @@ fun FoodEntryScreen(
     var mealName by remember { mutableStateOf(editingEntry?.name ?: "") }
     var remark by remember { mutableStateOf(editingEntry?.note ?: "") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val focusManager = LocalFocusManager.current
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
@@ -94,14 +101,20 @@ fun FoodEntryScreen(
                         value = mealName,
                         onValueChange = { mealName = it },
                         label = { Text("What did you eat?") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                     )
+
                     Spacer(modifier = Modifier.height(8.dp))
+
                     OutlinedTextField(
                         value = remark,
                         onValueChange = { remark = it },
                         label = { Text("Remark") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
                     )
                 }
 
