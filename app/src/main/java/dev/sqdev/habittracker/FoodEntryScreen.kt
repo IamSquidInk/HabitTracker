@@ -1,12 +1,16 @@
 package dev.sqdev.habittracker
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -66,24 +70,6 @@ fun FoodEntryScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = mealName,
-            onValueChange = { mealName = it },
-            label = { Text("What did you eat?") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = remark,
-            onValueChange = { remark = it },
-            label = { Text("Remark") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
         Spacer(modifier = Modifier.weight(1f))
 
         errorMessage?.let {
@@ -94,42 +80,76 @@ fun FoodEntryScreen(
             )
         }
 
-        Button(
-            onClick = {
-                when {
-                    selectedCategory == null -> errorMessage = "Please select a meal type"
-                    mealName.isBlank() -> errorMessage = "Please enter what you ate"
-                    else -> {
-                        errorMessage = null
-                        onSave(selectedCategory.id, mealName.trim(), remark.ifBlank { null })
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                .padding(12.dp)
         ) {
-            Text("Save Entry")
-        }
+            Row(modifier = Modifier.fillMaxWidth()) {
 
-        if (editingEntry == null && onSaveAndAddAnother != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = {
-                    when {
-                        selectedCategory == null -> errorMessage = "Please select a meal type"
-                        mealName.isBlank() -> errorMessage = "Please enter what you ate"
-                        else -> {
-                            errorMessage = null
-                            onSaveAndAddAnother(selectedCategory.id, mealName.trim(), remark.ifBlank { null })
-                            mealName = ""
-                            remark = ""
+                // Left column: meal name + remark
+                Column(modifier = Modifier.weight(0.62f)) {
+                    OutlinedTextField(
+                        value = mealName,
+                        onValueChange = { mealName = it },
+                        label = { Text("What did you eat?") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = remark,
+                        onValueChange = { remark = it },
+                        label = { Text("Remark") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Right column: Save buttons
+                Column(
+                    modifier = Modifier.weight(0.38f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Button(
+                        onClick = {
+                            when {
+                                selectedCategory == null -> errorMessage = "Please select a meal type"
+                                mealName.isBlank() -> errorMessage = "Please enter what you ate"
+                                else -> {
+                                    errorMessage = null
+                                    onSave(selectedCategory.id, mealName.trim(), remark.ifBlank { null })
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = "Save")
+                    }
+
+                    if (editingEntry == null && onSaveAndAddAnother != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                when {
+                                    selectedCategory == null -> errorMessage = "Please select a meal type"
+                                    mealName.isBlank() -> errorMessage = "Please enter what you ate"
+                                    else -> {
+                                        errorMessage = null
+                                        onSaveAndAddAnother(selectedCategory.id, mealName.trim(), remark.ifBlank { null })
+                                        mealName = ""
+                                        remark = ""
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.AddCircle, contentDescription = "Save and add another")
                         }
                     }
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Save & Add Another")
+                }
             }
         }
-
     }
 }
