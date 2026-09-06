@@ -1,6 +1,5 @@
 package dev.sqdev.habittracker
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,9 +18,13 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
-
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 
 @Composable
 fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
@@ -212,7 +215,10 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
                 onBack = { viewModel.closeCategoryManagement() }
             )
         } else {
+            val isDarkTheme by viewModel.isDarkTheme.collectAsState()
             SettingsScreen(
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = { viewModel.toggleTheme() },
                 onManageCategories = { viewModel.openCategoryManagement() },
                 onBack = { viewModel.closeSettingsScreen() }
             )
@@ -232,48 +238,58 @@ fun LedgerScreen(viewModel: LedgerViewModel = viewModel()) {
 
             SummaryCard(ledger = selectedLedger, viewModel = viewModel)
 
-            when (selectedLedger) {
-                SelectedLedger.PRODUCTIVITY -> {
-                    val groupedByDate = productivityEntries.groupBy { it.date }
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        groupedByDate.forEach { (date, dateEntries) ->
-                            item { DateHeader(date) }
-                            val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
-                            groupedByHour.forEach { (hour, hourEntries) ->
-                                item { HourHeader(hour) }
-                                items(hourEntries) { entry ->
-                                    val category = categories[entry.categoryId]
-                                    EntryRow(
-                                        categoryId = entry.categoryId,
-                                        icon = category?.icon ?: "❓",
-                                        categoryName = category?.name ?: "Unknown",
-                                        note = entry.note,
-                                        trailing = "${entry.hours}h ${entry.minutes}m",
-                                        onClick = { selectedProductivityEntry = entry }
-                                    )
+            AnimatedContent(
+                targetState = selectedLedger,
+                modifier = Modifier.weight(1f),
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(220)) + slideInHorizontally(animationSpec = tween(220)) { width -> width / 4 })
+                        .togetherWith(fadeOut(animationSpec = tween(220)) + slideOutHorizontally(animationSpec = tween(220)) { width -> -width / 4 })
+                },
+                label = "ledgerSwitch"
+            ) { ledger ->
+                when (ledger) {
+                    SelectedLedger.PRODUCTIVITY -> {
+                        val groupedByDate = productivityEntries.groupBy { it.date }
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            groupedByDate.forEach { (date, dateEntries) ->
+                                item { DateHeader(date) }
+                                val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
+                                groupedByHour.forEach { (hour, hourEntries) ->
+                                    item { HourHeader(hour) }
+                                    items(hourEntries) { entry ->
+                                        val category = categories[entry.categoryId]
+                                        EntryRow(
+                                            categoryId = entry.categoryId,
+                                            icon = category?.icon ?: "❓",
+                                            categoryName = category?.name ?: "Unknown",
+                                            note = entry.note,
+                                            trailing = "${entry.hours}h ${entry.minutes}m",
+                                            onClick = { selectedProductivityEntry = entry }
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                SelectedLedger.FOOD -> {
-                    val groupedByDate = foodEntries.groupBy { it.date }
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        groupedByDate.forEach { (date, dateEntries) ->
-                            item { DateHeader(date) }
-                            val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
-                            groupedByHour.forEach { (hour, hourEntries) ->
-                                item { HourHeader(hour) }
-                                items(hourEntries) { entry ->
-                                    val category = categories[entry.categoryId]
-                                    EntryRow(
-                                        categoryId = entry.categoryId,
-                                        icon = category?.icon ?: "❓",
-                                        categoryName = "${category?.name ?: "Unknown"} - ${entry.name}",
-                                        note = entry.note,
-                                        trailing = "",
-                                        onClick = { selectedFoodEntry = entry }
-                                    )
+                    SelectedLedger.FOOD -> {
+                        val groupedByDate = foodEntries.groupBy { it.date }
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            groupedByDate.forEach { (date, dateEntries) ->
+                                item { DateHeader(date) }
+                                val groupedByHour = dateEntries.groupBy { it.time.substring(0, 2) }
+                                groupedByHour.forEach { (hour, hourEntries) ->
+                                    item { HourHeader(hour) }
+                                    items(hourEntries) { entry ->
+                                        val category = categories[entry.categoryId]
+                                        EntryRow(
+                                            categoryId = entry.categoryId,
+                                            icon = category?.icon ?: "❓",
+                                            categoryName = "${category?.name ?: "Unknown"} - ${entry.name}",
+                                            note = entry.note,
+                                            trailing = "",
+                                            onClick = { selectedFoodEntry = entry }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -429,9 +445,10 @@ fun EntryRow(
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = categoryName + (note?.let { " – $it" } ?: ""),
+                color = CategoryEntryTextColor,
                 modifier = Modifier.weight(1f)
             )
-            Text(text = trailing)
+            Text(text = trailing, color = CategoryEntryTextColor)
         }
     }
 }

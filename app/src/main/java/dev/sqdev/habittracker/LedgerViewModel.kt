@@ -14,6 +14,17 @@ class LedgerViewModel(application: Application) : AndroidViewModel(application) 
     private val db = DatabaseProvider.getDatabase(application)
 
     private val _selectedLedger = MutableStateFlow(SelectedLedger.PRODUCTIVITY)
+
+    private val prefs = application.getSharedPreferences("habit_tracker_prefs", android.content.Context.MODE_PRIVATE)
+
+    private val _isDarkTheme = MutableStateFlow(prefs.getBoolean("dark_theme", false))
+    val isDarkTheme: StateFlow<Boolean> = _isDarkTheme
+
+    fun toggleTheme() {
+        val newValue = !_isDarkTheme.value
+        _isDarkTheme.value = newValue
+        prefs.edit().putBoolean("dark_theme", newValue).apply()
+    }
     val selectedLedger: StateFlow<SelectedLedger> = _selectedLedger
 
     val productivityEntries = db.productivityEntryDao().getAllEntries()

@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun SettingsScreen(
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
     onManageCategories: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -24,6 +26,17 @@ fun SettingsScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Theme: ${if (isDarkTheme) "Dark" else "Light"}")
+            Switch(checked = isDarkTheme, onCheckedChange = { onToggleTheme() })
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = onManageCategories,

@@ -1,7 +1,6 @@
 package dev.sqdev.habittracker
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import android.graphics.Color as AndroidColor
 
 fun categoryColor(categoryId: Long): Color {
@@ -9,3 +8,5 @@ fun categoryColor(categoryId: Long): Color {
     val hsv = floatArrayOf(hue.toFloat(), 0.35f, 0.92f)
     return Color(AndroidColor.HSVToColor(hsv))
 }
+
+val CategoryEntryTextColor = Color(0xFF1C1C1C)
